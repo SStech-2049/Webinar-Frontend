@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --brand-cream: #f6f2f0;
+  --brand-ink: #1d1b1d;
+}
+
+body {
+  background-color: var(--brand-cream);
+  color: var(--brand-ink);
+  font-family: var(--font-josefin), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-josefin), ui-sans-serif, sans-serif;
+}
+
+/* Elegant editorial accent — matches the Garamond italic on shesellsremote.com */
+.serif-italic {
+  font-family: var(--font-garamond), Georgia, "Times New Roman", serif;
+  font-style: italic;
+}
