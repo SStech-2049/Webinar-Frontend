@@ -2,9 +2,8 @@ import type { SourceBreakdown as Breakdown } from "@/lib/stats";
 
 const ROWS = [
   { key: "organic", label: "Organic", bar: "bg-brand-pink", text: "text-brand-pink" },
-  { key: "paid", label: "Paid", bar: "bg-brand-blue", text: "text-brand-blue" },
   { key: "email", label: "Email", bar: "bg-brand-gold", text: "text-brand-gold" },
-  { key: "other", label: "Other", bar: "bg-brand-ink/40", text: "text-brand-ink/50" },
+  { key: "paid", label: "Paid", bar: "bg-brand-blue", text: "text-brand-blue" },
 ] as const;
 
 function fmt(n: number) {
@@ -28,7 +27,6 @@ export function SourceBreakdownCard({
       <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
         {ROWS.map((row) => {
           const value = data[row.key];
-          if (row.key === "other" && value === 0) return null;
           const pct = (value / total) * 100;
           return (
             <div key={row.key}>
