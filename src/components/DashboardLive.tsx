@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { WebinarStats } from "@/lib/stats";
+import type { WebinarStats, WebinarEvent } from "@/lib/stats";
 import { StatCard } from "./StatCard";
 import { SourceBreakdownCard } from "./SourceBreakdown";
 
@@ -17,36 +17,72 @@ function fmtMoney(n: number) {
     maximumFractionDigits: 0,
   });
 }
+function fmtDate(d: string | null) {
+  if (!d) return "—";
+  const [y, m, day] = d.split("-").map(Number);
+  return new Date(y, m - 1, day).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
-export function DashboardLive({ initial }: { initial: WebinarStats }) {
+export function DashboardLive({
+  initial,
+  events,
+}: {
+  initial: WebinarStats;
+  events: WebinarEvent[];
+}) {
   const [stats, setStats] = useState<WebinarStats>(initial);
+  const [eventList, setEventList] = useState<WebinarEvent[]>(events);
+  const [selectedEventId, setSelectedEventId] = useState<string>(
+    initial.eventId ?? events[0]?.eventId ?? ""
+  );
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const refresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      const res = await fetch("/api/stats", { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setStats(await res.json());
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Refresh failed");
-    } finally {
-      setRefreshing(false);
-    }
-  }, []);
+  const refresh = useCallback(
+    async (eventId: string) => {
+      if (!eventId) return;
+      setRefreshing(true);
+      try {
+        const res = await fetch(
+          `/api/stats?eventId=${encodeURIComponent(eventId)}`,
+          { cache: "no-store" }
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: WebinarStats & { events?: WebinarEvent[] } =
+          await res.json();
+        setStats(data);
+        if (data.events) setEventList(data.events);
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Refresh failed");
+      } finally {
+        setRefreshing(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    timer.current = setInterval(refresh, POLL_MS);
-    const onVisible = () => document.visibilityState === "visible" && refresh();
+    timer.current = setInterval(() => refresh(selectedEventId), POLL_MS);
+    const onVisible = () =>
+      document.visibilityState === "visible" && refresh(selectedEventId);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       if (timer.current) clearInterval(timer.current);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [refresh]);
+  }, [refresh, selectedEventId]);
+
+  function onSelectEvent(e: React.ChangeEvent<HTMLSelectElement>) {
+    const id = e.target.value;
+    setSelectedEventId(id);
+    refresh(id);
+  }
 
   const attendRate =
     stats.totalRegistrants > 0
@@ -55,23 +91,73 @@ export function DashboardLive({ initial }: { initial: WebinarStats }) {
 
   const updated = new Date(stats.lastUpdated).toLocaleTimeString("en-US");
 
+  const isLatest = eventList[0]?.eventId === selectedEventId;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-brand-ink/50">
-        <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-pink opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-pink" />
-        </span>
-        Live · updated {updated}
-        <button
-          onClick={refresh}
-          disabled={refreshing}
-          className="ml-2 rounded-full border border-brand-ink/20 px-3 py-0.5 text-brand-ink/70 transition hover:bg-brand-ink hover:text-white disabled:opacity-50"
-        >
-          {refreshing ? "Refreshing…" : "Refresh"}
-        </button>
-        {error && <span className="text-brand-pink">· {error}</span>}
+      {/* Webinar selector + selected date */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-ink/50">
+            Webinar
+          </label>
+          <div className="mt-1 flex items-center gap-3">
+            <select
+              value={selectedEventId}
+              onChange={onSelectEvent}
+              className="rounded-full border border-brand-ink/20 bg-white px-4 py-2 text-sm font-medium text-brand-ink outline-none transition focus:border-brand-pink"
+            >
+              {eventList.map((ev, i) => {
+                // Show the live total for the currently-selected event so the
+                // option count always matches the Total Registrants card.
+                const regs =
+                  ev.eventId === selectedEventId
+                    ? stats.totalRegistrants
+                    : ev.registrants;
+                return (
+                  <option key={ev.eventId} value={ev.eventId}>
+                    {fmtDate(ev.webinarDate)}
+                    {i === 0 ? " — latest" : ""} ({fmtInt(regs)} regs)
+                  </option>
+                );
+              })}
+            </select>
+            {!isLatest && (
+              <button
+                onClick={() => onSelectEvent({
+                  target: { value: eventList[0]?.eventId ?? "" },
+                } as React.ChangeEvent<HTMLSelectElement>)}
+                className="text-xs uppercase tracking-wide text-brand-pink underline-offset-2 hover:underline"
+              >
+                Jump to latest
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-brand-ink/50">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-pink opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-pink" />
+          </span>
+          Live · updated {updated}
+          <button
+            onClick={() => refresh(selectedEventId)}
+            disabled={refreshing}
+            className="ml-2 rounded-full border border-brand-ink/20 px-3 py-0.5 text-brand-ink/70 transition hover:bg-brand-ink hover:text-white disabled:opacity-50"
+          >
+            {refreshing ? "Refreshing…" : "Refresh"}
+          </button>
+          {error && <span className="text-brand-pink">· {error}</span>}
+        </div>
       </div>
+
+      <h2 className="text-xl font-bold">
+        <span className="serif-italic font-normal text-brand-ink/50">
+          Webinar of{" "}
+        </span>
+        {fmtDate(stats.webinarDate)}
+      </h2>
 
       {/* Headline payout + registrant KPIs — first vs. last source */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

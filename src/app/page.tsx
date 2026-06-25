@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getWebinarStats } from "@/lib/stats";
+import { getWebinarStats, getWebinarEvents } from "@/lib/stats";
 import { DashboardLive } from "@/components/DashboardLive";
 import { LogoutButton } from "@/components/LogoutButton";
 
@@ -14,7 +14,10 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
-  const stats = await getWebinarStats();
+  const [events, stats] = await Promise.all([
+    getWebinarEvents(),
+    getWebinarStats(),
+  ]);
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -29,7 +32,7 @@ export default async function DashboardPage() {
         <LogoutButton />
       </header>
 
-      <DashboardLive initial={stats} />
+      <DashboardLive initial={stats} events={events} />
     </main>
   );
 }

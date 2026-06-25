@@ -7,8 +7,8 @@ import { createAdminClient } from "./supabase/admin";
  */
 export const ORGANIC_PAYOUT_RATE = 33.65;
 
-/** "Organic" for the payout = Hyros FIRST-source attribution. */
-const VIEW = "v_current_webinar";
+/** Registrants are pulled from this view, scoped by event_id. */
+const VIEW = "v_all_registrants";
 
 export type SourceBreakdown = {
   organic: number;
@@ -18,7 +18,15 @@ export type SourceBreakdown = {
   total: number;
 };
 
+export type WebinarEvent = {
+  eventId: string;
+  webinarDate: string | null; // YYYY-MM-DD
+  registrants: number;
+};
+
 export type WebinarStats = {
+  eventId: string | null;
+  webinarDate: string | null; // YYYY-MM-DD of the selected webinar
   totalRegistrants: number;
   attendees: number;
   firstSource: SourceBreakdown;
@@ -35,14 +43,94 @@ type QueryBuilder = ReturnType<
   ReturnType<typeof createAdminClient>["from"]
 >["select"];
 
-export async function getWebinarStats(): Promise<WebinarStats> {
+// Short cache so the dropdown counts (and which events appear) track the live
+// sync without re-probing on every single request.
+let eventsCache: { at: number; data: WebinarEvent[] } | null = null;
+const EVENTS_TTL_MS = 30 * 1000;
+
+/**
+ * Webinars that actually have registrants, newest first.
+ * Candidates come from the small webinar_events table; we probe each for a
+ * registrant count in v_all_registrants (PostgREST aggregates are disabled,
+ * so we can't GROUP BY) and drop events with none.
+ */
+export async function getWebinarEvents(force = false): Promise<WebinarEvent[]> {
+  if (!force && eventsCache && Date.now() - eventsCache.at < EVENTS_TTL_MS) {
+    return eventsCache.data;
+  }
+
   const supabase = createAdminClient();
 
-  // Efficient head-count queries (no rows transferred), run in parallel.
+  const { data: events, error } = await supabase
+    .from("webinar_events")
+    .select("id, webinar_date")
+    .not("webinar_date", "is", null)
+    .order("webinar_date", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const probed = await Promise.all(
+    (events ?? []).map(async (e) => {
+      // A "registrant" is any row tied to the event in v_all_registrants.
+      // (is_registrant only reflects Hyros-tag status, not whether they
+      // registered, so it under-counts — we don't filter on it.)
+      const { count } = await supabase
+        .from(VIEW)
+        .select("*", { count: "exact", head: true })
+        .eq("event_id", e.id);
+      return {
+        eventId: e.id as string,
+        webinarDate: e.webinar_date as string | null,
+        registrants: count ?? 0,
+      };
+    })
+  );
+
+  const data = probed.filter((e) => e.registrants > 0);
+  eventsCache = { at: Date.now(), data };
+  return data;
+}
+
+function emptyBreakdown(): SourceBreakdown {
+  return { organic: 0, paid: 0, email: 0, other: 0, total: 0 };
+}
+
+/**
+ * Stats for a single webinar. Defaults to the latest webinar when no
+ * eventId is supplied. Registrants are scoped by event_id.
+ */
+export async function getWebinarStats(eventId?: string): Promise<WebinarStats> {
+  const supabase = createAdminClient();
+  const events = await getWebinarEvents();
+
+  const targetEventId = eventId ?? events[0]?.eventId ?? null;
+  const webinarDate =
+    events.find((e) => e.eventId === targetEventId)?.webinarDate ?? null;
+
+  if (!targetEventId) {
+    return {
+      eventId: null,
+      webinarDate: null,
+      totalRegistrants: 0,
+      attendees: 0,
+      firstSource: emptyBreakdown(),
+      lastSource: emptyBreakdown(),
+      organicRegistrants: 0,
+      organicPayout: 0,
+      organicRegistrantsLast: 0,
+      organicPayoutLast: 0,
+      payoutRate: ORGANIC_PAYOUT_RATE,
+      lastUpdated: new Date().toISOString(),
+    };
+  }
+
+  // Efficient head-count queries (no rows transferred), scoped to the event.
   const count = async (
     apply: (q: ReturnType<QueryBuilder>) => ReturnType<QueryBuilder>
   ): Promise<number> => {
-    const base = supabase.from(VIEW).select("*", { count: "exact", head: true });
+    const base = supabase
+      .from(VIEW)
+      .select("*", { count: "exact", head: true })
+      .eq("event_id", targetEventId);
     const { count: c, error } = await apply(base);
     if (error) throw new Error(error.message);
     return c ?? 0;
@@ -58,7 +146,8 @@ export async function getWebinarStats(): Promise<WebinarStats> {
     lastPaid,
     lastEmail,
   ] = await Promise.all([
-    count((q) => q.eq("is_registrant", true)),
+    // Every row with this event_id counts as a registrant (see note above).
+    count((q) => q),
     count((q) => q.eq("is_attendee", true)),
     count((q) => q.eq("traffic_first_source", "Organic")),
     count((q) => q.eq("traffic_first_source", "Paid")),
@@ -85,6 +174,8 @@ export async function getWebinarStats(): Promise<WebinarStats> {
   };
 
   return {
+    eventId: targetEventId,
+    webinarDate,
     totalRegistrants: total,
     attendees,
     firstSource,
