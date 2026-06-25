@@ -27,7 +27,7 @@ export function StatCard({
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60 sm:text-[11px] sm:tracking-[0.18em]">
           {label}
         </p>
-        <p className="mt-1.5 text-3xl font-bold leading-tight tracking-tight text-brand-pink tabular-nums sm:mt-2 sm:text-4xl">
+        <p className="mt-1.5 text-2xl font-bold leading-tight tracking-tight text-brand-pink tabular-nums sm:mt-2 sm:text-4xl">
           {value}
         </p>
         {sub && (

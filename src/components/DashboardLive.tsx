@@ -152,7 +152,6 @@ export function DashboardLive({
             2
           )}`}
           highlight
-          className="col-span-2 lg:col-span-1"
         />
         <StatCard
           label="Organic Payout · Last"
