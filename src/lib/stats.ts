@@ -24,7 +24,9 @@ export type WebinarStats = {
   firstSource: SourceBreakdown;
   lastSource: SourceBreakdown;
   organicRegistrants: number; // first-source organic
-  organicPayout: number;
+  organicPayout: number; // first-source organic × rate
+  organicRegistrantsLast: number; // last-source organic
+  organicPayoutLast: number; // last-source organic × rate
   payoutRate: number;
   lastUpdated: string; // ISO timestamp
 };
@@ -89,6 +91,8 @@ export async function getWebinarStats(): Promise<WebinarStats> {
     lastSource,
     organicRegistrants: firstOrganic,
     organicPayout: firstOrganic * ORGANIC_PAYOUT_RATE,
+    organicRegistrantsLast: lastOrganic,
+    organicPayoutLast: lastOrganic * ORGANIC_PAYOUT_RATE,
     payoutRate: ORGANIC_PAYOUT_RATE,
     lastUpdated: new Date().toISOString(),
   };

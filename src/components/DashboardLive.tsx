@@ -73,10 +73,10 @@ export function DashboardLive({ initial }: { initial: WebinarStats }) {
         {error && <span className="text-brand-pink">· {error}</span>}
       </div>
 
-      {/* Headline payout + registrant KPIs */}
+      {/* Headline payout + registrant KPIs — first vs. last source */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Organic Payout"
+          label="Organic Payout · First"
           value={fmtMoney(stats.organicPayout)}
           sub={`${fmtInt(stats.organicRegistrants)} organic regs × $${stats.payoutRate.toFixed(
             2
@@ -84,11 +84,29 @@ export function DashboardLive({ initial }: { initial: WebinarStats }) {
           highlight
         />
         <StatCard
-          label="Organic Registrants"
+          label="Organic Payout · Last"
+          value={fmtMoney(stats.organicPayoutLast)}
+          sub={`${fmtInt(stats.organicRegistrantsLast)} organic regs × $${stats.payoutRate.toFixed(
+            2
+          )}`}
+          accent="gold"
+        />
+        <StatCard
+          label="Organic Registrants · First"
           value={fmtInt(stats.organicRegistrants)}
           sub="First source = Organic"
           accent="pink"
         />
+        <StatCard
+          label="Organic Registrants · Last"
+          value={fmtInt(stats.organicRegistrantsLast)}
+          sub="Last source = Organic"
+          accent="gold"
+        />
+      </section>
+
+      {/* Audience totals */}
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <StatCard
           label="Total Registrants"
           value={fmtInt(stats.totalRegistrants)}
