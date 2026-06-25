@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { WebinarStats, WebinarEvent } from "@/lib/stats";
 import { StatCard } from "./StatCard";
 import { SourceBreakdownCard } from "./SourceBreakdown";
+import { WebinarSelect } from "./WebinarSelect";
 
 const POLL_MS = 30_000;
 
@@ -78,8 +79,7 @@ export function DashboardLive({
     };
   }, [refresh, selectedEventId]);
 
-  function onSelectEvent(e: React.ChangeEvent<HTMLSelectElement>) {
-    const id = e.target.value;
+  function selectEvent(id: string) {
     setSelectedEventId(id);
     refresh(id);
   }
@@ -102,31 +102,15 @@ export function DashboardLive({
             Webinar
           </label>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <select
+            <WebinarSelect
+              events={eventList}
               value={selectedEventId}
-              onChange={onSelectEvent}
-              className="w-full rounded-full border border-brand-ink/20 bg-white px-4 py-2 text-sm font-medium text-brand-ink outline-none transition focus:border-brand-pink sm:w-auto"
-            >
-              {eventList.map((ev, i) => {
-                // Show the live total for the currently-selected event so the
-                // option count always matches the Total Registrants card.
-                const regs =
-                  ev.eventId === selectedEventId
-                    ? stats.totalRegistrants
-                    : ev.registrants;
-                return (
-                  <option key={ev.eventId} value={ev.eventId}>
-                    {fmtDate(ev.webinarDate)}
-                    {i === 0 ? " — latest" : ""} ({fmtInt(regs)} regs)
-                  </option>
-                );
-              })}
-            </select>
+              onChange={selectEvent}
+              liveTotal={stats.totalRegistrants}
+            />
             {!isLatest && (
               <button
-                onClick={() => onSelectEvent({
-                  target: { value: eventList[0]?.eventId ?? "" },
-                } as React.ChangeEvent<HTMLSelectElement>)}
+                onClick={() => selectEvent(eventList[0]?.eventId ?? "")}
                 className="text-xs uppercase tracking-wide text-brand-pink underline-offset-2 hover:underline"
               >
                 Jump to latest
