@@ -18,8 +18,8 @@ const garamond = EB_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Webinar Dashboard",
-  description: "Live webinar registrant, source & payout metrics",
+  title: "Shelby's Organic Payout",
+  description: "Live Shelby's organic payout & registrant metrics",
 };
 
 export default function RootLayout({

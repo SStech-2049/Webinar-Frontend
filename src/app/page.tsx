@@ -27,7 +27,7 @@ export default async function DashboardPage() {
             She Sells Remote
           </p>
           <h1 className="text-xl font-bold uppercase tracking-tight sm:text-3xl">
-            Webinar Dashboard
+            Shelby's Organic Payout
           </h1>
           <p className="mt-0.5 truncate text-xs text-brand-ink/50 sm:mt-1 sm:text-sm">
             {user.email}
