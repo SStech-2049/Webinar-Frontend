@@ -21,11 +21,11 @@ export function SourceBreakdownCard({
   const total = data.total || 1;
 
   return (
-    <div className="rounded-2xl border border-brand-ink/10 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-brand-ink/10 bg-white p-4 shadow-sm sm:p-5">
       <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-ink/70">
         {title}
       </h3>
-      <div className="mt-4 space-y-4">
+      <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
         {ROWS.map((row) => {
           const value = data[row.key];
           if (row.key === "other" && value === 0) return null;

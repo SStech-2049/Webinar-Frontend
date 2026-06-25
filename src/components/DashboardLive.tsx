@@ -94,18 +94,18 @@ export function DashboardLive({
   const isLatest = eventList[0]?.eventId === selectedEventId;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Webinar selector + selected date */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <label className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-ink/50">
             Webinar
           </label>
-          <div className="mt-1 flex items-center gap-3">
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2">
             <select
               value={selectedEventId}
               onChange={onSelectEvent}
-              className="rounded-full border border-brand-ink/20 bg-white px-4 py-2 text-sm font-medium text-brand-ink outline-none transition focus:border-brand-pink"
+              className="w-full rounded-full border border-brand-ink/20 bg-white px-4 py-2 text-sm font-medium text-brand-ink outline-none transition focus:border-brand-pink sm:w-auto"
             >
               {eventList.map((ev, i) => {
                 // Show the live total for the currently-selected event so the
@@ -135,7 +135,7 @@ export function DashboardLive({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-brand-ink/50">
+        <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-brand-ink/50">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-pink opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-pink" />
@@ -152,7 +152,7 @@ export function DashboardLive({
         </div>
       </div>
 
-      <h2 className="text-xl font-bold">
+      <h2 className="text-lg font-bold sm:text-xl">
         <span className="serif-italic font-normal text-brand-ink/50">
           Webinar of{" "}
         </span>
@@ -160,7 +160,7 @@ export function DashboardLive({
       </h2>
 
       {/* Headline payout + registrant KPIs — first vs. last source */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Organic Payout · First"
           value={fmtMoney(stats.organicPayout)}
@@ -168,6 +168,7 @@ export function DashboardLive({
             2
           )}`}
           highlight
+          className="col-span-2 lg:col-span-1"
         />
         <StatCard
           label="Organic Payout · Last"
@@ -192,7 +193,7 @@ export function DashboardLive({
       </section>
 
       {/* Audience totals */}
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <section className="grid grid-cols-2 gap-3 sm:gap-4">
         <StatCard
           label="Total Registrants"
           value={fmtInt(stats.totalRegistrants)}
@@ -207,7 +208,7 @@ export function DashboardLive({
       </section>
 
       {/* Source breakdowns — mirrors the Airtable Webinar Interface */}
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <section className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
         <SourceBreakdownCard title="First Source" data={stats.firstSource} />
         <SourceBreakdownCard title="Last Source" data={stats.lastSource} />
       </section>

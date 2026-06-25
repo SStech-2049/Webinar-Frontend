@@ -20,14 +20,18 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <header className="mb-8 flex items-end justify-between border-b border-brand-ink/10 pb-5">
-        <div>
-          <p className="serif-italic text-base text-brand-pink">She Sells Remote</p>
-          <h1 className="text-3xl font-bold uppercase tracking-tight">
+    <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <header className="mb-6 flex items-start justify-between gap-3 border-b border-brand-ink/10 pb-4 sm:mb-8 sm:items-end sm:pb-5">
+        <div className="min-w-0">
+          <p className="serif-italic text-sm text-brand-pink sm:text-base">
+            She Sells Remote
+          </p>
+          <h1 className="text-xl font-bold uppercase tracking-tight sm:text-3xl">
             Webinar Dashboard
           </h1>
-          <p className="mt-1 text-sm text-brand-ink/50">{user.email}</p>
+          <p className="mt-0.5 truncate text-xs text-brand-ink/50 sm:mt-1 sm:text-sm">
+            {user.email}
+          </p>
         </div>
         <LogoutButton />
       </header>
