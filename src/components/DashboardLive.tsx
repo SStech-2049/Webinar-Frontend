@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WebinarStats, WebinarEvent } from "@/lib/stats";
 import { StatCard } from "./StatCard";
+import { SourceBreakdownCard } from "./SourceBreakdown";
 import { WebinarSelect } from "./WebinarSelect";
 
 const POLL_MS = 30_000;
@@ -30,10 +31,15 @@ function fmtDate(d: string | null) {
 export function DashboardLive({
   initial,
   events,
+  view = "full",
 }: {
   initial: WebinarStats;
   events: WebinarEvent[];
+  view?: "full" | "shelby" | "ally";
 }) {
+  // shelby: payout + organic registrants only.  ally: no payout.
+  const showPayout = view !== "ally";
+  const showAudienceAndSources = view !== "shelby";
   const [stats, setStats] = useState<WebinarStats>(initial);
   const [eventList, setEventList] = useState<WebinarEvent[]>(events);
   const [selectedEventId, setSelectedEventId] = useState<string>(
@@ -82,6 +88,11 @@ export function DashboardLive({
     setSelectedEventId(id);
     refresh(id);
   }
+
+  const attendRate =
+    stats.totalRegistrants > 0
+      ? (stats.attendees / stats.totalRegistrants) * 100
+      : 0;
 
   const updated = new Date(stats.lastUpdated).toLocaleTimeString("en-US");
 
@@ -137,30 +148,66 @@ export function DashboardLive({
         {fmtDate(stats.webinarDate)}
       </h2>
 
-      {/* Shelby Organic Payout — first vs. last source + registrants */}
-      <section className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-3">
+      {/* Headline payout + registrant KPIs — first vs. last source */}
+      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        {showPayout && (
+          <>
+            <StatCard
+              label="Organic Payout · First"
+              value={fmtMoney(stats.organicPayout)}
+              sub={`${fmtInt(stats.organicRegistrants)} organic regs × $${stats.payoutRate.toFixed(
+                2
+              )}`}
+              highlight
+            />
+            <StatCard
+              label="Organic Payout · Last"
+              value={fmtMoney(stats.organicPayoutLast)}
+              sub={`${fmtInt(stats.organicRegistrantsLast)} organic regs × $${stats.payoutRate.toFixed(
+                2
+              )}`}
+              accent="gold"
+            />
+          </>
+        )}
         <StatCard
-          label="Organic Payout · First"
-          value={fmtMoney(stats.organicPayout)}
-          sub={`${fmtInt(stats.organicRegistrants)} organic regs × $${stats.payoutRate.toFixed(
-            2
-          )}`}
-          highlight
+          label="Organic Registrants · First"
+          value={fmtInt(stats.organicRegistrants)}
+          sub="First source = Organic"
+          accent="pink"
         />
         <StatCard
-          label="Organic Payout · Last"
-          value={fmtMoney(stats.organicPayoutLast)}
-          sub={`${fmtInt(stats.organicRegistrantsLast)} organic regs × $${stats.payoutRate.toFixed(
-            2
-          )}`}
+          label="Organic Registrants · Last"
+          value={fmtInt(stats.organicRegistrantsLast)}
+          sub="Last source = Organic"
           accent="gold"
         />
-        <StatCard
-          label="Total Registrants"
-          value={fmtInt(stats.totalRegistrants)}
-          accent="ink"
-        />
       </section>
+
+      {showAudienceAndSources && (
+        <>
+          {/* Audience totals */}
+          <section className="grid grid-cols-2 gap-3 sm:gap-4">
+            <StatCard
+              label="Total Registrants"
+              value={fmtInt(stats.totalRegistrants)}
+              accent="ink"
+            />
+            <StatCard
+              label="Attendees"
+              value={fmtInt(stats.attendees)}
+              sub={`${attendRate.toFixed(1)}% of registrants`}
+              accent="blue"
+            />
+          </section>
+
+          {/* Source breakdowns — mirrors the Airtable Webinar Interface */}
+          <section className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+            <SourceBreakdownCard title="First Source" data={stats.firstSource} />
+            <SourceBreakdownCard title="Last Source" data={stats.lastSource} />
+          </section>
+        </>
+      )}
     </div>
   );
 }

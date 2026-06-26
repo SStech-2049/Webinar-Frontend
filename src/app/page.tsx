@@ -14,6 +14,18 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
+  // Per-user dashboard variants.
+  //  - shelby: only organic payout (first/last) + organic registrants
+  //  - ally:   no payout; registrant counts + source breakdowns
+  //  - full:   everything (default)
+  const email = user.email?.toLowerCase();
+  const view: "full" | "shelby" | "ally" =
+    email === "shelby@shelbysapp.com"
+      ? "shelby"
+      : email === "ally@shelbysapp.com"
+      ? "ally"
+      : "full";
+
   const [events, stats] = await Promise.all([
     getWebinarEvents(),
     getWebinarStats(),
@@ -27,7 +39,7 @@ export default async function DashboardPage() {
             She Sells Remote
           </p>
           <h1 className="text-xl font-bold uppercase tracking-tight sm:text-3xl">
-            Shelby's Organic Payout
+            {view === "shelby" ? "Shelby Organic Payout" : "Webinar Dashboard"}
           </h1>
           <p className="mt-0.5 truncate text-xs text-brand-ink/50 sm:mt-1 sm:text-sm">
             {user.email}
@@ -36,7 +48,7 @@ export default async function DashboardPage() {
         <LogoutButton />
       </header>
 
-      <DashboardLive initial={stats} events={events} />
+      <DashboardLive initial={stats} events={events} view={view} />
     </main>
   );
 }
