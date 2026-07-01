@@ -16,13 +16,13 @@ export default async function DashboardPage() {
 
   // Per-user dashboard variants.
   //  - shelby: only organic payout (first/last) + organic registrants
-  //  - ally:   no payout; registrant counts + source breakdowns
+  //  - ally:   no payout; registrant counts + source breakdowns (also tech@)
   //  - full:   everything (default)
   const email = user.email?.toLowerCase();
   const view: "full" | "shelby" | "ally" =
     email === "shelby@shelbysapp.com"
       ? "shelby"
-      : email === "ally@shelbysapp.com"
+      : email === "ally@shelbysapp.com" || email === "tech@shelbysapp.com"
       ? "ally"
       : "full";
 
